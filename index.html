@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Credit Risk Analysis</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="index.css"
+    />
+
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1><i class="fas fa-chart-line"></i> Credit Risk Analysis System</h1>
+        <p class="subtitle">
+          Upload a CSV file containing customer financial data to assess credit
+          risk using our advanced machine learning models
+        </p>
+      </header>
+
+      <div class="content">
+        <div class="upload-section">
+          <h2 class="section-title">
+            <i class="fas fa-file-upload"></i> Upload CSV File
+          </h2>
+
+          <div class="upload-area" id="dropArea">
+            <div class="upload-icon">
+              <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <p class="upload-text">Drag & Drop your CSV file here</p>
+            <p>or</p>
+            <div class="browse-btn" id="browseBtn">Browse Files</div>
+            <input
+              type="file"
+              id="fileInput"
+              class="file-input"
+              accept=".csv"
+            />
+          </div>
+
+          <div class="file-info" id="fileInfo">
+            <!-- File info will appear here -->
+          </div>
+
+          <button type="button" class="process-btn" id="processBtn" disabled>
+            Analyze Credit Risk
+          </button>
+
+          <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p>Processing your data. This may take a few moments...</p>
+          </div>
+
+          <div class="requirements">
+            <h3><i class="fas fa-exclamation-circle"></i> CSV Requirements</h3>
+            <ul>
+              <li>File must be in CSV format with UTF-8 encoding</li>
+              <li>
+                Required columns: <strong>age</strong>,
+                <strong>monthly_income_inr</strong>,
+                <strong>outstanding_loan_amount_inr</strong>
+              </li>
+              <li>First row should contain headers</li>
+              <li>File should not exceed 5MB in size</li>
+              <li>Ensure all required fields have valid numerical values</li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="result-section">
+          <h2 class="section-title">
+            <i class="fas fa-poll"></i> Analysis Results
+          </h2>
+
+          <div id="storageInfo" class="storage-info" style="display: none">
+            <h4><i class="fas fa-database"></i> Stored Results</h4>
+            <p id="storageDetails">No stored results available</p>
+            <div class="action-buttons">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                id="clearStorageBtn"
+              >
+                Clear Storage
+              </button>
+              <button type="button" class="btn btn-success" id="loadStoredBtn">
+                Load Stored Results
+              </button>
+            </div>
+          </div>
+
+          <div id="resultsContainer">
+            <div class="summary-cards">
+              <div class="summary-card">
+                <div class="summary-icon approve">
+                  <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="summary-content">
+                  <h3>Approved</h3>
+                  <p id="approved-count">0</p>
+                </div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-icon review">
+                  <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div class="summary-content">
+                  <h3>Review</h3>
+                  <p id="review-count">0</p>
+                </div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-icon reject">
+                  <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="summary-content">
+                  <h3>Rejected</h3>
+                  <p id="reject-count">0</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="applicant-list-container">
+              <div class="list-header">
+                <div class="header-item">ID</div>
+                <div class="header-item">Name</div>
+                <div class="header-item">Income</div>
+                <div class="header-item">Risk</div>
+                <div class="header-item">Decision</div>
+              </div>
+              <div class="applicant-list" id="applicantList">
+                <!-- Applicant cards will be inserted here -->
+              </div>
+            </div>
+          </div>
+
+          <div class="action-buttons" id="resultActions" style="display: none">
+            <button type="button" class="btn btn-secondary" id="exportJsonBtn">
+              Export JSON
+            </button>
+            <button type="button" class="btn btn-success" id="saveResultsBtn">
+              Save to Storage
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <footer>
+        <p>
+          Credit Risk Analysis System &copy; 2023 | Powered by Machine Learning
+          Models
+        </p>
+      </footer>
+    </div>
+  </body>
+  <script src="index.js"></script>
+</html>
