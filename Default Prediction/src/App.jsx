@@ -26,7 +26,7 @@ function App() {
        // For actual API call:
       const formData = new FormData();
       formData.append('file', file);
-      const response = await fetch('http://10.21.24.114:5000/api/credit_risk/analyze', {
+      const response = await fetch('http://localhost:5000/api/credit_risk/analyze', {
         method: 'POST',
         body: formData
       });
