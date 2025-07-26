@@ -2,36 +2,58 @@
 import React from "react";
 
 function SummaryCards({ data }) {
+  const cardData = [
+    {
+      type: "Approve",
+      title: "Approved",
+      icon: "fa-check-circle",
+      bgColor: "bg-green-500",
+      textColor: "text-white"
+    },
+    {
+      type: "Review",
+      title: "Needs Review",
+      icon: "fa-exclamation-circle",
+      bgColor: "bg-yellow-400",
+      textColor: "text-gray-800"
+    },
+    {
+      type: "Reject",
+      title: "Rejected",
+      icon: "fa-times-circle",
+      bgColor: "bg-red-500",
+      textColor: "text-white"
+    },
+    {
+      type: "Total",
+      title: "Total Applications",
+      icon: "fa-file-alt",
+      bgColor: "bg-blue-500",
+      textColor: "text-white",
+      value: (data?.Approve || 0) + (data?.Review || 0) + (data?.Reject || 0)
+    }
+  ];
+
   return (
-    <div className="summary-cards">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-4">
-        {["Approve", "Review", "Reject"].map((type) => (
-          <div
-            key={type}
-            className={`p-4 rounded-lg shadow-md text-white ${
-              type === "Approve"
-                ? "bg-green-500"
-                : type === "Review"
-                ? "bg-yellow-500 text-black"
-                : "bg-red-500"
-            }`}
-          >
-            <div className="flex items-center gap-3 text-xl font-semibold">
-              <i
-                className={`fas ${
-                  type === "Approve"
-                    ? "fa-check-circle"
-                    : type === "Review"
-                    ? "fa-exclamation-circle"
-                    : "fa-times-circle"
-                }`}
-              ></i>
-              {type}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {cardData.map((card) => (
+        <div
+          key={card.type}
+          className={`p-5 rounded-xl shadow-md ${card.bgColor} ${card.textColor}`}
+        >
+          <div className="flex justify-between items-center">
+            <div>
+              <div className="text-sm font-medium">{card.title}</div>
+              <div className="text-2xl font-bold mt-1">
+                {card.value || data?.[card.type] || 0}
+              </div>
             </div>
-            <p className="text-3xl mt-2">{data[type] || 0}</p>
+            <div className="text-2xl">
+              <i className={`fas ${card.icon}`}></i>
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   );
 }

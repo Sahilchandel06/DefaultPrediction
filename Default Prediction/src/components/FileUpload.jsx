@@ -40,16 +40,25 @@ function FileUpload({ onProcess, isLoading }) {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <h2 className="text-2xl font-bold flex items-center gap-2 text-gray-800">
-        <i className="fas fa-file-upload text-blue-500 text-xl"></i>
-        Upload CSV File
-      </h2>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+          <i className="fas fa-file-upload text-blue-500"></i>
+          Upload CSV File
+        </h2>
+        <a 
+          href="/templates/sample.csv" 
+          download="credit_risk_template.csv"
+          className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
+        >
+          <i className="fas fa-download mr-1"></i>
+          Download Template
+        </a>
+      </div>
 
       {/* Upload Area */}
       <div
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${
+        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
           isDragActive
             ? "bg-blue-50 border-blue-500"
             : "border-gray-300 bg-white"
@@ -68,61 +77,76 @@ function FileUpload({ onProcess, isLoading }) {
         <p className="text-gray-500 mb-4">or</p>
         <label
           htmlFor="fileInput"
-          className="inline-block px-5 py-2 bg-blue-600 text-white font-medium rounded shadow hover:bg-blue-700 cursor-pointer transition"
+          className="inline-flex items-center px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg shadow hover:bg-blue-700 cursor-pointer transition"
         >
+          <i className="fas fa-folder-open mr-2"></i>
           Browse Files
+          <input
+            type="file"
+            id="fileInput"
+            className="hidden"
+            accept=".csv"
+            onChange={handleFileChange}
+          />
         </label>
-        <input
-          type="file"
-          id="fileInput"
-          className="hidden"
-          accept=".csv"
-          onChange={handleFileChange}
-        />
       </div>
 
       {/* Selected File Info */}
       {selectedFile && (
-        <div className="bg-green-50 border border-green-300 rounded-md px-6 py-4">
-          <h3 className="text-green-700 font-semibold text-lg mb-1 flex items-center">
-            <i className="fas fa-file-csv mr-2"></i> Selected File
-          </h3>
-          <p className="text-sm text-gray-700">
-            <strong>Filename:</strong> {selectedFile.name}
-          </p>
-          <p className="text-sm text-gray-700">
-            <strong>Size:</strong> {formatFileSize(selectedFile.size)}
-          </p>
+        <div className="bg-green-50 border border-green-200 rounded-xl px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-green-700 font-semibold text-lg mb-1 flex items-center">
+                <i className="fas fa-file-csv mr-2"></i> Selected File
+              </h3>
+              <p className="text-sm text-gray-700">
+                <strong>Filename:</strong> {selectedFile.name}
+              </p>
+              <p className="text-sm text-gray-700">
+                <strong>Size:</strong> {formatFileSize(selectedFile.size)}
+              </p>
+            </div>
+            <button 
+              onClick={() => setSelectedFile(null)}
+              className="text-red-500 hover:text-red-700"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
         </div>
       )}
 
       {/* Action Button */}
-      <button
-        type="button"
-        className={`w-full sm:w-auto px-6 py-2 font-semibold text-white rounded transition ${
-          !selectedFile || isLoading
-            ? "bg-blue-300 cursor-not-allowed"
-            : "bg-blue-600 hover:bg-blue-700"
-        }`}
-        onClick={() => onProcess(selectedFile)}
-        disabled={!selectedFile || isLoading}
-      >
-        {isLoading ? "Processing..." : "Analyze Credit Risk"}
-      </button>
-
-      {/* Loader */}
-      {isLoading && (
-        <div className="flex items-center gap-3">
-          <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-blue-500"></div>
-          <p className="text-gray-600">Processing your data...</p>
-        </div>
-      )}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          className={`px-6 py-3 font-semibold text-white rounded-lg shadow transition flex items-center ${
+            !selectedFile || isLoading
+              ? "bg-blue-300 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
+          onClick={() => onProcess(selectedFile)}
+          disabled={!selectedFile || isLoading}
+        >
+          {isLoading ? (
+            <>
+              <i className="fas fa-spinner fa-spin mr-2"></i>
+              Processing...
+            </>
+          ) : (
+            <>
+              <i className="fas fa-play mr-2"></i>
+              Analyze Credit Risk
+            </>
+          )}
+        </button>
+      </div>
 
       {/* Requirements */}
-      <div className="bg-gray-100 border border-gray-300 p-6 rounded-md">
+      <div className="bg-gray-50 border border-gray-200 p-6 rounded-xl">
         <h3 className="text-gray-800 font-semibold mb-3 flex items-center">
-          <i className="fas fa-info-circle mr-2 text-gray-500"></i> CSV
-          Requirements
+          <i className="fas fa-info-circle mr-2 text-gray-500"></i>
+          CSV Requirements
         </h3>
         <ul className="list-disc pl-5 text-sm space-y-1 text-gray-700">
           <li>File must be in CSV format with UTF-8 encoding</li>
@@ -132,7 +156,7 @@ function FileUpload({ onProcess, isLoading }) {
           <li className="w-full">
             Required columns:
             <div className="w-full mt-1">
-              <div className="font-mono text-xs text-gray-600 bg-gray-200 p-3 rounded overflow-x-auto">
+              <div className="font-mono text-xs text-gray-600 bg-gray-100 p-3 rounded-lg overflow-x-auto">
                 applicant_id, application_date, age, gender, education_level,
                 employment_type, marital_status, family_size,
                 number_of_dependents, location_type, monthly_income_inr,

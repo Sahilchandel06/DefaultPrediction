@@ -1,13 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Layout from './components/Layout';
+import Dashboard from './components/Dashboard';
 import FileUpload from './components/FileUpload';
 import ResultsDisplay from './components/ResultsDisplay';
 import Notification from './components/Notification';
-import './App.css'; // Tailwind CSS is injected here
+import AnalysisHistory from './components/AnalysisHistory';
+import './App.css';
 
 function App() {
   const [analysisData, setAnalysisData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [analysisHistory, setAnalysisHistory] = useState([]);
+
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('analysisHistory');
+    if (savedHistory) {
+      setAnalysisHistory(JSON.parse(savedHistory));
+    }
+  }, []);
 
   const showNotification = (message, type = 'info') => {
     setNotification({ message, type });
@@ -23,7 +35,6 @@ function App() {
     setIsLoading(true);
 
     try {
-       // For actual API call:
       const formData = new FormData();
       formData.append('file', file);
       const response = await fetch('http://localhost:5000/api/credit_risk/analyze', {
@@ -32,53 +43,75 @@ function App() {
       });
       const data = await response.json();
 
-      setTimeout(() => {
-        setAnalysisData(data);
-        setIsLoading(false);
-        showNotification('Analysis completed successfully!', 'success');
-      }, 2000);
+      const newAnalysis = {
+        id: `ANL-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        data: data.results,
+        filename: file.name,
+        status: 'completed'
+      };
+
+      const updatedHistory = [newAnalysis, ...analysisHistory];
+      setAnalysisHistory(updatedHistory);
+      localStorage.setItem('analysisHistory', JSON.stringify(updatedHistory));
+
+      setAnalysisData(data);
+      showNotification('Analysis completed successfully!', 'success');
     } catch (error) {
-      setIsLoading(false);
       showNotification('Processing failed. Please try again.', 'error');
       console.error('Error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleLoadFromHistory = (analysis) => {
+    setAnalysisData({ results: analysis.data });
+    showNotification('Analysis loaded from history', 'success');
+  };
+
   return (
-    <div className="max-w-6xl mx-auto p-4 text-gray-800">
-      <header className="text-center my-8">
-        <h1 className="text-3xl font-bold text-blue-600 flex justify-center items-center gap-2">
-          <i className="fas fa-chart-line"></i> Credit Risk Analysis System
-        </h1>
-        <p className="text-md text-gray-500 mt-2">
-          Upload a CSV file containing customer financial data to assess credit
-          risk using our advanced machine learning models.
-        </p>
-      </header>
+    <Router>
+      <Layout>
+        <Routes>
+          <Route path="/" element={
+            <Dashboard 
+              history={analysisHistory} 
+              onLoadAnalysis={handleLoadFromHistory} 
+            />
+          } />
+          <Route path="/analyze" element={
+            <div className="max-w-5xl mx-auto">
+              <div className="bg-white rounded-xl shadow p-6 mb-8">
+                <FileUpload onProcess={handleFileProcess} isLoading={isLoading} />
+              </div>
+              {analysisData && (
+                <div className="bg-white rounded-xl shadow p-6 mb-8">
+                  <ResultsDisplay 
+                    data={analysisData.results} 
+                    filename={analysisData.filename}
+                    showNotification={showNotification}
+                  />
+                </div>
+              )}
+            </div>
+          } />
+          <Route path="/history" element={
+            <AnalysisHistory 
+              history={analysisHistory} 
+              onLoadAnalysis={handleLoadFromHistory}
+            />
+          } />
+        </Routes>
 
-      <div className="bg-white rounded-lg shadow p-6 mb-8">
-        <FileUpload onProcess={handleFileProcess} isLoading={isLoading} />
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-6 mb-8">
-        <ResultsDisplay 
-          data={analysisData?.results} 
-          isLoading={isLoading}
-          showNotification={showNotification}
-        />
-      </div>
-
-      <footer className="text-center text-sm text-gray-400 mt-10">
-        Credit Risk Analysis System &copy; 2023 | Powered by Machine Learning Models
-      </footer>
-
-      {notification && (
-        <Notification 
-          message={notification.message} 
-          type={notification.type} 
-        />
-      )}
-    </div>
+        {notification && (
+          <Notification 
+            message={notification.message} 
+            type={notification.type} 
+          />
+        )}
+      </Layout>
+    </Router>
   );
 }
 

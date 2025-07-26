@@ -463,12 +463,12 @@ def run_fixed_system():
 
         # Train models with balanced approach
         print("\n=== TRAINING BALANCED MODELS ===")
-        system.train_models("E:\\IITH\\realistic_credit_risk_dataset.csv")
+        system.train_models("C:\\Users\\Sahil Chandel\\OneDrive\\Desktop\\everything\\Finshield\\DefaultPrediction\\realistic_credit_risk_dataset.csv")
         system.save_models()
 
         # Process test data
         print("\n=== PROCESSING TEST DATA ===")
-        results, output_path = system.process_csv_for_website("E:\\IITH\\balanced_test_dataset.csv")
+        results, output_path = system.process_csv_for_website("C:\\Users\\Sahil Chandel\\OneDrive\\Desktop\\everything\\Finshield\\DefaultPrediction\\balanced_test_dataset.csv")
 
         print(f"\n🎉 SUCCESS - BALANCED RESULTS!")
         return results, output_path
