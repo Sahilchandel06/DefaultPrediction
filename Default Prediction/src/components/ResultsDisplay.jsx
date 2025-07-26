@@ -1,76 +1,84 @@
-import React, { useState } from 'react';
-import SummaryCards from './SummaryCards';
-import ApplicantCard from './ApplicantCard';
+import React, { useState } from "react";
+import SummaryCards from "./SummaryCards";
+import ApplicantCard from "./ApplicantCard";
 
 function ResultsDisplay({ data, filename, showNotification }) {
   const [expandedApplicant, setExpandedApplicant] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filter, setFilter] = useState("all");
 
   const handleExportJSON = () => {
     const dataStr = JSON.stringify(data, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const dataBlob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
     link.download = `credit_risk_analysis_${filename || Date.now()}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    showNotification('Results exported as JSON', 'success');
+    showNotification("Results exported as JSON", "success");
   };
 
   const handleExportCSV = () => {
     // Convert data to CSV format
     const headers = [
-      'Applicant ID',
-      'Name',
-      'Age',
-      'Gender',
-      'Monthly Income',
-      'Risk Level',
-      'Recommendation',
-      'Default Probability'
+      "Applicant ID",
+      "Name",
+      "Age",
+      "Gender",
+      "Monthly Income",
+      "Risk Level",
+      "Recommendation",
+      "Default Probability",
     ];
 
-    const rows = data.individual_applicants.map(applicant => [
+    const rows = data.individual_applicants.map((applicant) => [
       applicant.applicant_id,
-      applicant.demographics.name || 'N/A',
+      applicant.demographics.name || "N/A",
       applicant.demographics.age,
       applicant.demographics.gender,
       applicant.demographics.monthly_income,
       applicant.risk_assessment.overall_risk,
       applicant.risk_assessment.recommendation,
-      applicant.risk_assessment.default_probability
+      applicant.risk_assessment.default_probability,
     ]);
 
-    let csvContent = headers.join(',') + '\n';
-    rows.forEach(row => {
-      csvContent += row.map(field => `"${field}"`).join(',') + '\n';
+    let csvContent = headers.join(",") + "\n";
+    rows.forEach((row) => {
+      csvContent += row.map((field) => `"${field}"`).join(",") + "\n";
     });
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
     link.download = `credit_risk_results_${filename || Date.now()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    showNotification('Results exported as CSV', 'success');
+    showNotification("Results exported as CSV", "success");
   };
 
-  const filteredApplicants = data?.individual_applicants.filter(applicant => {
-    const matchesSearch = applicant.applicant_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (applicant.demographics.name && applicant.demographics.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesFilter = filter === 'all' || 
-      (filter === 'approve' && applicant.risk_assessment.recommendation.toLowerCase() === 'approve') ||
-      (filter === 'review' && applicant.risk_assessment.recommendation.toLowerCase() === 'review') ||
-      (filter === 'reject' && applicant.risk_assessment.recommendation.toLowerCase() === 'reject');
-    
+  const filteredApplicants = data?.individual_applicants.filter((applicant) => {
+    const matchesSearch =
+      applicant.applicant_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (applicant.demographics.name &&
+        applicant.demographics.name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()));
+
+    const matchesFilter =
+      filter === "all" ||
+      (filter === "approve" &&
+        applicant.risk_assessment.recommendation.toLowerCase() === "approve") ||
+      (filter === "review" &&
+        applicant.risk_assessment.recommendation.toLowerCase() === "review") ||
+      (filter === "reject" &&
+        applicant.risk_assessment.recommendation.toLowerCase() === "reject");
+
     return matchesSearch && matchesFilter;
   });
 
@@ -81,8 +89,12 @@ function ResultsDisplay({ data, filename, showNotification }) {
           <div className="mx-auto w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-4">
             <i className="fas fa-chart-pie text-3xl text-blue-500"></i>
           </div>
-          <h3 className="text-lg font-medium text-gray-800 mb-2">No Analysis Data</h3>
-          <p className="text-gray-500">Upload and analyze a CSV file to see results</p>
+          <h3 className="text-lg font-medium text-gray-800 mb-2">
+            No Analysis Data
+          </h3>
+          <p className="text-gray-500">
+            Upload and analyze a CSV file to see results
+          </p>
         </div>
       </div>
     );
@@ -93,7 +105,11 @@ function ResultsDisplay({ data, filename, showNotification }) {
       <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
           <i className="fas fa-poll text-blue-500"></i> Analysis Results
-          {filename && <span className="text-sm font-normal text-gray-500 ml-2">({filename})</span>}
+          {filename && (
+            <span className="text-sm font-normal text-gray-500 ml-2">
+              ({filename})
+            </span>
+          )}
         </h2>
         <div className="flex items-center space-x-4">
           <div className="relative">
@@ -108,16 +124,30 @@ function ResultsDisplay({ data, filename, showNotification }) {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <select
-            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          >
-            <option value="all">All Decisions</option>
-            <option value="approve">Approved</option>
-            <option value="review">Review</option>
-            <option value="reject">Rejected</option>
-          </select>
+          <div className="relative w-48">
+            <select
+              className="appearance-none border border-gray-300 rounded-lg px-3 py-2 pr-10 focus:ring-blue-500 focus:border-blue-500 w-full"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            >
+              <option value="all">All Decisions</option>
+              <option value="approve">Approved</option>
+              <option value="review">Review</option>
+              <option value="reject">Rejected</option>
+            </select>
+            <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">
+              <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
+                <path
+                  d="M6 8l4 4 4-4"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+          </div>
         </div>
       </div>
 
@@ -142,7 +172,9 @@ function ResultsDisplay({ data, filename, showNotification }) {
                 isExpanded={expandedApplicant === applicant.applicant_id}
                 onToggle={() =>
                   setExpandedApplicant(
-                    expandedApplicant === applicant.applicant_id ? null : applicant.applicant_id
+                    expandedApplicant === applicant.applicant_id
+                      ? null
+                      : applicant.applicant_id
                   )
                 }
               />
@@ -152,7 +184,8 @@ function ResultsDisplay({ data, filename, showNotification }) {
 
         <div className="flex justify-between items-center mt-8 pt-4 border-t border-gray-200">
           <div className="text-sm text-gray-500">
-            Showing {filteredApplicants?.length || 0} of {data.individual_applicants.length} applicants
+            Showing {filteredApplicants?.length || 0} of{" "}
+            {data.individual_applicants.length} applicants
           </div>
           <div className="flex gap-4">
             <button
