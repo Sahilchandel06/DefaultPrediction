@@ -119,11 +119,11 @@ function ApplicantCard({ applicant, isExpanded, onToggle }) {
                       </span>
                     </div>
                   </div>
-                  <div className="w-16 h-16">
+                  {/* <div className="w-16 h-16">
                     <div className="radial-progress" style={{"--value":(risk_assessment.default_probability * 100), "--size":"4rem", "--thickness": "6px"}}>
                       {(risk_assessment.default_probability * 100).toFixed(0)}%
                     </div>
-                  </div>
+                  </div> */}
                 </div>
               </div>
               <div className="bg-white p-4 rounded-lg border border-gray-100">

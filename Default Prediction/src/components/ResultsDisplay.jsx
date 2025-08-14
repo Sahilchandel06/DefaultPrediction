@@ -123,16 +123,30 @@ function ResultsDisplay({ data, filename, showNotification }) {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <select
-            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          >
-            <option value="all">All Decisions</option>
-            <option value="approve">Approved</option>
-            <option value="review">Review</option>
-            <option value="reject">Rejected</option>
-          </select>
+          <div className="relative w-48">
+            <select
+              className="appearance-none border border-gray-300 rounded-lg px-3 py-2 pr-10 focus:ring-blue-500 focus:border-blue-500 w-full"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            >
+              <option value="all">All Decisions</option>
+              <option value="approve">Approved</option>
+              <option value="review">Review</option>
+              <option value="reject">Rejected</option>
+            </select>
+            <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">
+              <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
+                <path
+                  d="M6 8l4 4 4-4"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+          </div>
         </div>
       </div>
 
