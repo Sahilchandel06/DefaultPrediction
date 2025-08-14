@@ -37,7 +37,7 @@ function App() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const response = await fetch('http://localhost:5000/api/credit_risk/analyze', {
+      const response = await fetch('https://defaultprediction-backend.onrender.com/api/credit_risk/analyze', {
         method: 'POST',
         body: formData
       });
