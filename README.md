@@ -49,20 +49,22 @@ The system uses a pipeline-based approach to ensure data consistency and accurac
 
 1.  **Clone the Repository**
     ```bash
-    git clone [https://github.com/yourusername/FinShield.git](https://github.com/yourusername/FinShield.git)
-    cd FinShield
+    git clone https://github.com/Nikhil-9876/DefaultPrediction.git
+    cd DefaultPrediction
     ```
 
 2.  **Install Backend Dependencies**
     First, ensure you have a `requirements.txt` file (or create one) with the following packages:
+    -   `flask`
+    -   `flask-cors`
     -   `pandas`
-    -   `numpy`
     -   `scikit-learn`
     -   `joblib`
 
+
     Then, install them using `pip`:
     ```bash
-    cd Server
+    cd DefaultPrediction
     pip install -r requirements.txt
     ```
 
@@ -85,6 +87,7 @@ The system uses a pipeline-based approach to ensure data consistency and accurac
 
     ```bash
     python fixed_credit_risk_system.py
+    python api_endpoint.py
     ```
 
     You will see a series of log messages indicating the progress of the training and processing steps. The final output file path and a summary of the analysis will be printed to the console.
@@ -95,7 +98,7 @@ The system uses a pipeline-based approach to ensure data consistency and accurac
 
 1.  **Install Frontend Dependencies**
     ```bash
-    cd Client
+    cd DefaultPrediction/Default Prediction
     npm install
     ```
 
