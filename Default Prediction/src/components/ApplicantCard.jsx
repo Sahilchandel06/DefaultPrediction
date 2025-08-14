@@ -1,4 +1,3 @@
-// src/components/ApplicantCard.jsx
 import React from "react";
 
 function ApplicantCard({ applicant, isExpanded, onToggle }) {
@@ -29,7 +28,8 @@ function ApplicantCard({ applicant, isExpanded, onToggle }) {
       >
         <div className="col-span-2 text-sm font-medium text-gray-700">{applicant_id}</div>
         <div className="col-span-3 text-sm">
-          {demographics.name || 'N/A'}, {demographics.age}
+          {/* Only AGE is shown here, nothing else */}
+          {demographics.age !== undefined && demographics.age !== null ? demographics.age : ""}
         </div>
         <div className="col-span-2 text-sm">₹{demographics.monthly_income.toLocaleString()}</div>
         <div className="col-span-2">
@@ -65,7 +65,9 @@ function ApplicantCard({ applicant, isExpanded, onToggle }) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
               <div className="bg-white p-3 rounded-lg border border-gray-100">
                 <div className="text-xs text-gray-500 mb-1">Age</div>
-                <div className="font-medium">{demographics.age}</div>
+                <div className="font-medium">
+                  {demographics.age !== undefined && demographics.age !== null ? demographics.age : ""}
+                </div>
               </div>
               <div className="bg-white p-3 rounded-lg border border-gray-100">
                 <div className="text-xs text-gray-500 mb-1">Gender</div>

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 function Dashboard({ history, onLoadAnalysis }) {
   const totalAnalyses = history.length;
   const lastAnalysis = history[0];
-  
+
   const getPortfolioStats = (analysis) => {
     if (!analysis || !analysis.data) return null;
     return analysis.data.portfolio_overview.approval_summary;
@@ -17,12 +17,14 @@ function Dashboard({ history, onLoadAnalysis }) {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
         <div className="text-sm text-gray-500">
-          {lastAnalysis ? `Last analyzed: ${new Date(lastAnalysis.timestamp).toLocaleString()}` : 'No analyses yet'}
+          {lastAnalysis
+            ? `Last analyzed: ${new Date(lastAnalysis.timestamp).toLocaleString()}`
+            : 'No analyses yet'}
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -36,33 +38,17 @@ function Dashboard({ history, onLoadAnalysis }) {
         </div>
 
         {portfolioStats ? (
-          <>
-            <div className="bg-white rounded-xl shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Approved Loans</p>
-                  <p className="text-3xl font-bold text-gray-800 mt-1">{portfolioStats.Approve || 0}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-green-100 text-green-600">
-                  <i className="fas fa-check-circle text-xl"></i>
-                </div>
+          <div className="bg-white rounded-xl shadow p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Approved Loans</p>
+                <p className="text-3xl font-bold text-gray-800 mt-1">{portfolioStats.Approve || 0}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-green-100 text-green-600">
+                <i className="fas fa-check-circle text-xl"></i>
               </div>
             </div>
-
-            <div className="bg-white rounded-xl shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Risk Score</p>
-                  <p className="text-3xl font-bold text-gray-800 mt-1">
-                    {lastAnalysis.data.portfolio_overview.risk_score?.toFixed(1) || 'N/A'}
-                  </p>
-                </div>
-                <div className="p-3 rounded-lg bg-purple-100 text-purple-600">
-                  <i className="fas fa-shield-alt text-xl"></i>
-                </div>
-              </div>
-            </div>
-          </>
+          </div>
         ) : (
           <div className="md:col-span-2 bg-white rounded-xl shadow p-6 flex items-center justify-center">
             <p className="text-gray-500">No analysis data available</p>
@@ -74,6 +60,7 @@ function Dashboard({ history, onLoadAnalysis }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Link to="/analyze" className="bg-white rounded-xl shadow p-6 hover:shadow-md transition cursor-pointer">
           <div className="flex flex-col items-center text-center">
+            {/* Upload Icon with Blue Circle */}
             <div className="p-4 rounded-full bg-blue-100 text-blue-600 mb-3">
               <i className="fas fa-file-upload text-2xl"></i>
             </div>
@@ -84,6 +71,7 @@ function Dashboard({ history, onLoadAnalysis }) {
 
         <Link to="/history" className="bg-white rounded-xl shadow p-6 hover:shadow-md transition cursor-pointer">
           <div className="flex flex-col items-center text-center">
+            {/* History Icon with Green Circle */}
             <div className="p-4 rounded-full bg-green-100 text-green-600 mb-3">
               <i className="fas fa-history text-2xl"></i>
             </div>
@@ -92,9 +80,13 @@ function Dashboard({ history, onLoadAnalysis }) {
           </div>
         </Link>
 
-        <a href="/templates/sample.csv" download="credit_risk_template.csv" 
-          className="bg-white rounded-xl shadow p-6 hover:shadow-md transition cursor-pointer">
+        <a
+          href="/templates/sample.csv"
+          download="credit_risk_template.csv"
+          className="bg-white rounded-xl shadow p-6 hover:shadow-md transition cursor-pointer"
+        >
           <div className="flex flex-col items-center text-center">
+            {/* Template Icon with Purple Circle */}
             <div className="p-4 rounded-full bg-purple-100 text-purple-600 mb-3">
               <i className="fas fa-file-alt text-2xl"></i>
             </div>
@@ -112,8 +104,11 @@ function Dashboard({ history, onLoadAnalysis }) {
           </div>
           <div className="divide-y divide-gray-200">
             {history.slice(0, 5).map((analysis) => (
-              <div key={analysis.id} className="px-6 py-4 hover:bg-gray-50 transition cursor-pointer"
-                onClick={() => onLoadAnalysis(analysis)}>
+              <div
+                key={analysis.id}
+                className="px-6 py-4 hover:bg-gray-50 transition cursor-pointer"
+                onClick={() => onLoadAnalysis(analysis)}
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-gray-800">{analysis.filename}</p>
