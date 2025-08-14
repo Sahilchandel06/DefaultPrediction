@@ -68,8 +68,7 @@ The system uses a pipeline-based approach to ensure data consistency and accurac
 
 3.  **Prepare a Training Dataset**
     Your model is pre-configured to use a specific training file path. Place your training data (e.g., `realistic_credit_risk_dataset.csv`) and a test data file (e.g., `balanced_test_dataset.csv`) in the specified directory:
-    -   `C:\Users\Sahil Chandel\OneDrive\Desktop\everything\Finshield\DefaultPrediction\`
-    -   Alternatively, you can modify the file paths in the `run_fixed_system()` function to match your local setup.
+    -   modify the file paths in the `run_fixed_system()` function to match your local setup.
 
 ***
 
