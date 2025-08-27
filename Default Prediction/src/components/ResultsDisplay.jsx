@@ -1,24 +1,86 @@
 import React, { useState } from "react";
 import SummaryCards from "./SummaryCards";
 import ApplicantCard from "./ApplicantCard";
+import * as XLSX from 'xlsx';
 
 function ResultsDisplay({ data, filename, showNotification }) {
   const [expandedApplicant, setExpandedApplicant] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
 
-  const handleExportJSON = () => {
-    const dataStr = JSON.stringify(data, null, 2);
-    const dataBlob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(dataBlob);
+  const handleExportExcel = () => {
+    // Prepare data for Excel export
+    const excelData = data.individual_applicants.map((applicant) => ({
+      "Applicant ID": applicant.applicant_id,
+      "Name": applicant.demographics.name || "N/A",
+      "Age": applicant.demographics.age,
+      "Gender": applicant.demographics.gender,
+      "Education": applicant.demographics.education,
+      "Employment": applicant.demographics.employment,
+      "Monthly Income": applicant.demographics.monthly_income,
+      "Risk Level": applicant.risk_assessment.overall_risk,
+      "Risk Color": applicant.risk_assessment.risk_color,
+      "Default Probability": `${(applicant.risk_assessment.default_probability * 100).toFixed(2)}%`,
+      "Recommendation": applicant.risk_assessment.recommendation,
+      "Timeliness Score": applicant.top_decision_metrics.find(m => m.name === "Payment Timeliness")?.value || "N/A",
+      "Repayment Score": applicant.top_decision_metrics.find(m => m.name === "Repayment Ability")?.value || "N/A",
+      "Loan Eligibility": applicant.loan_details.eligibility,
+      "Min Loan Amount": applicant.loan_details.loan_range.minimum,
+      "Max Loan Amount": applicant.loan_details.loan_range.maximum,
+      "Suggested Term (Months)": applicant.loan_details.terms.tenure_months,
+      "Monthly EMI": applicant.loan_details.terms.monthly_emi,
+      "Interest Rate Min": applicant.loan_details.terms.interest_rate_range.min,
+      "Interest Rate Max": applicant.loan_details.terms.interest_rate_range.max
+    }));
+
+    // Create workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    
+    // Main applicant data sheet
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Credit Risk Analysis");
+
+    // Summary sheet
+    const summaryData = [
+      { Metric: "Total Applicants", Value: data.analysis_metadata.total_applicants },
+      { Metric: "Approved", Value: data.portfolio_overview.approval_summary.Approve },
+      { Metric: "Under Review", Value: data.portfolio_overview.approval_summary.Review },
+      { Metric: "Rejected", Value: data.portfolio_overview.approval_summary.Reject },
+      { Metric: "Low Risk", Value: data.portfolio_overview.risk_distribution.Low },
+      { Metric: "Medium Risk", Value: data.portfolio_overview.risk_distribution.Medium },
+      { Metric: "High Risk", Value: data.portfolio_overview.risk_distribution.High },
+      { Metric: "Total Loan Potential", Value: data.portfolio_overview.total_loan_potential },
+      { Metric: "Average Default Probability", Value: `${(data.portfolio_overview.average_metrics.default_probability * 100).toFixed(2)}%` },
+      { Metric: "Average Timeliness Score", Value: data.portfolio_overview.average_metrics.timeliness_score },
+      { Metric: "Average Repayment Score", Value: data.portfolio_overview.average_metrics.repayment_score },
+      { Metric: "Average Monthly Income", Value: data.portfolio_overview.average_metrics.monthly_income }
+    ];
+    
+    const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, "Portfolio Summary");
+
+    // Auto-width for columns
+    const colWidths = [
+      { wch: 15 }, { wch: 20 }, { wch: 8 }, { wch: 10 },
+      { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 12 },
+      { wch: 12 }, { wch: 18 }, { wch: 15 }, { wch: 15 },
+      { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
+      { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 15 }
+    ];
+    worksheet['!cols'] = colWidths;
+
+    // Generate and download Excel file
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `credit_risk_analysis_${filename || Date.now()}.json`;
+    link.download = `credit_risk_analysis_${filename || Date.now()}.xlsx`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    showNotification("Results exported as JSON", "success");
+    showNotification("Results exported as Excel file", "success");
   };
 
   const handleExportCSV = () => {
@@ -196,10 +258,10 @@ function ResultsDisplay({ data, filename, showNotification }) {
             </button>
             <button
               type="button"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
-              onClick={handleExportJSON}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center"
+              onClick={handleExportExcel}
             >
-              <i className="fas fa-file-code mr-2"></i> Export JSON
+              <i className="fas fa-file-excel mr-2"></i> Export Excel
             </button>
           </div>
         </div>

@@ -6,7 +6,7 @@ function Dashboard({ history, onLoadAnalysis }) {
   const lastAnalysis = history[0];
 
   const getPortfolioStats = (analysis) => {
-    if (!analysis || !analysis.data) return null;
+    if (!analysis || !analysis.data || !analysis.data.portfolio_overview) return null;
     return analysis.data.portfolio_overview.approval_summary;
   };
 
@@ -50,7 +50,7 @@ function Dashboard({ history, onLoadAnalysis }) {
             </div>
           </div>
         ) : (
-          <div className="md:col-span-2 bg-white rounded-xl shadow p-6 flex items-center justify-center">
+          <div className="bg-white rounded-xl shadow p-6 flex items-center justify-center">
             <p className="text-gray-500">No analysis data available</p>
           </div>
         )}
@@ -60,18 +60,16 @@ function Dashboard({ history, onLoadAnalysis }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Link to="/analyze" className="bg-white rounded-xl shadow p-6 hover:shadow-md transition cursor-pointer">
           <div className="flex flex-col items-center text-center">
-            {/* Upload Icon with Blue Circle */}
             <div className="p-4 rounded-full bg-blue-100 text-blue-600 mb-3">
               <i className="fas fa-file-upload text-2xl"></i>
             </div>
             <h3 className="font-medium text-gray-800">New Analysis</h3>
-            <p className="text-sm text-gray-500 mt-1">Upload CSV for risk assessment</p>
+            <p className="text-sm text-gray-500 mt-1">Upload data for risk assessment</p>
           </div>
         </Link>
 
         <Link to="/history" className="bg-white rounded-xl shadow p-6 hover:shadow-md transition cursor-pointer">
           <div className="flex flex-col items-center text-center">
-            {/* History Icon with Green Circle */}
             <div className="p-4 rounded-full bg-green-100 text-green-600 mb-3">
               <i className="fas fa-history text-2xl"></i>
             </div>
@@ -86,12 +84,11 @@ function Dashboard({ history, onLoadAnalysis }) {
           className="bg-white rounded-xl shadow p-6 hover:shadow-md transition cursor-pointer"
         >
           <div className="flex flex-col items-center text-center">
-            {/* Template Icon with Purple Circle */}
             <div className="p-4 rounded-full bg-purple-100 text-purple-600 mb-3">
               <i className="fas fa-file-alt text-2xl"></i>
             </div>
             <h3 className="font-medium text-gray-800">Template</h3>
-            <p className="text-sm text-gray-500 mt-1">Download CSV template</p>
+            <p className="text-sm text-gray-500 mt-1">Download data template</p>
           </div>
         </a>
       </div>
@@ -118,10 +115,10 @@ function Dashboard({ history, onLoadAnalysis }) {
                   </div>
                   <div className="flex items-center space-x-4">
                     <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                      {analysis.status}
+                      {analysis.status || 'Completed'}
                     </span>
                     <span className="text-sm text-gray-500">
-                      {analysis.data.individual_applicants.length} applicants
+                      {analysis.data?.individual_applicants?.length || 0} applicants
                     </span>
                   </div>
                 </div>

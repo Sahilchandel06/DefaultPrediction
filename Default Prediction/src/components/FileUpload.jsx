@@ -4,6 +4,9 @@ function FileUpload({ onProcess, isLoading }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragActive, setIsDragActive] = useState(false);
 
+  // Supported file extensions
+  const SUPPORTED_FORMATS = ['.csv', '.xlsx', '.xls', '.xlsm', '.xlsb', '.ods', '.json'];
+  
   const handleDrag = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -24,10 +27,17 @@ function FileUpload({ onProcess, isLoading }) {
   };
 
   const handleFile = (file) => {
-    if (!file.name.toLowerCase().endsWith(".csv"))
-      return alert("Please upload a valid CSV file.");
     if (file.size > 5 * 1024 * 1024)
       return alert("File size exceeds the 5MB limit.");
+    
+    // Check file extension
+    const fileName = file.name.toLowerCase();
+    const isValidFormat = SUPPORTED_FORMATS.some(format => fileName.endsWith(format));
+    
+    if (!isValidFormat) {
+      return alert(`Unsupported file format. Please upload: ${SUPPORTED_FORMATS.join(', ')}`);
+    }
+    
     setSelectedFile(file);
   };
 
@@ -39,12 +49,33 @@ function FileUpload({ onProcess, isLoading }) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
+  const getFileIcon = (fileName) => {
+    const name = fileName.toLowerCase();
+    if (name.endsWith('.csv')) return 'fas fa-file-csv';
+    if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.xlsm') || name.endsWith('.xlsb')) return 'fas fa-file-excel';
+    if (name.endsWith('.ods')) return 'fas fa-file-alt';
+    if (name.endsWith('.json')) return 'fas fa-file-code';
+    return 'fas fa-file';
+  };
+
+  const getFileTypeDisplay = (fileName) => {
+    const name = fileName.toLowerCase();
+    if (name.endsWith('.csv')) return 'CSV File';
+    if (name.endsWith('.xlsx')) return 'Excel File (.xlsx)';
+    if (name.endsWith('.xls')) return 'Excel File (.xls)';
+    if (name.endsWith('.xlsm')) return 'Excel File (.xlsm)';
+    if (name.endsWith('.xlsb')) return 'Excel File (.xlsb)';
+    if (name.endsWith('.ods')) return 'OpenDocument Spreadsheet';
+    if (name.endsWith('.json')) return 'JSON File';
+    return 'Data File';
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
           <i className="fas fa-file-upload text-blue-500"></i>
-          Upload CSV File
+          Upload Data File
         </h2>
         <a 
           href="/templates/sample.csv" 
@@ -72,7 +103,10 @@ function FileUpload({ onProcess, isLoading }) {
           <i className="fas fa-cloud-upload-alt"></i>
         </div>
         <p className="text-gray-600 text-base font-medium mb-2">
-          Drag & Drop your CSV file here
+          Drag & Drop your data file here
+        </p>
+        <p className="text-gray-500 mb-2 text-sm">
+          Supports CSV, Excel (.xlsx, .xls, .xlsm, .xlsb), ODS, JSON
         </p>
         <p className="text-gray-500 mb-4">or</p>
         <label
@@ -85,7 +119,7 @@ function FileUpload({ onProcess, isLoading }) {
             type="file"
             id="fileInput"
             className="hidden"
-            accept=".csv"
+            accept=".csv,.xlsx,.xls,.xlsm,.xlsb,.ods,.json"
             onChange={handleFileChange}
           />
         </label>
@@ -97,10 +131,14 @@ function FileUpload({ onProcess, isLoading }) {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-green-700 font-semibold text-lg mb-1 flex items-center">
-                <i className="fas fa-file-csv mr-2"></i> Selected File
+                <i className={`${getFileIcon(selectedFile.name)} mr-2`}></i> 
+                Selected File
               </h3>
               <p className="text-sm text-gray-700">
                 <strong>Filename:</strong> {selectedFile.name}
+              </p>
+              <p className="text-sm text-gray-700">
+                <strong>Type:</strong> {getFileTypeDisplay(selectedFile.name)}
               </p>
               <p className="text-sm text-gray-700">
                 <strong>Size:</strong> {formatFileSize(selectedFile.size)}
@@ -146,16 +184,26 @@ function FileUpload({ onProcess, isLoading }) {
       <div className="bg-gray-50 border border-gray-200 p-6 rounded-xl">
         <h3 className="text-gray-800 font-semibold mb-3 flex items-center">
           <i className="fas fa-info-circle mr-2 text-gray-500"></i>
-          CSV Requirements
+          File Requirements
         </h3>
-        <ul className="list-disc pl-5 text-sm space-y-1 text-gray-700">
-          <li>File must be in CSV format with UTF-8 encoding</li>
-          <li>First row should contain headers</li>
-          <li>File should not exceed 5MB in size</li>
+        <ul className="list-disc pl-5 text-sm space-y-2 text-gray-700">
+          <li>
+            <strong>Supported formats:</strong> 
+            <div className="mt-1 flex flex-wrap gap-2">
+              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">CSV</span>
+              <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Excel (.xlsx, .xls, .xlsm, .xlsb)</span>
+              <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs">OpenDocument (.ods)</span>
+              <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">JSON</span>
+            </div>
+          </li>
+          <li>File should not exceed <strong>5MB</strong> in size</li>
+          <li>For Excel files: Data should be in the first sheet</li>
+          <li>For CSV files: UTF-8 encoding recommended</li>
+          <li>First row should contain column headers</li>
           <li>Ensure all required fields have valid numerical values</li>
           <li className="w-full">
             Required columns:
-            <div className="w-full mt-1">
+            <div className="w-full mt-2">
               <div className="font-mono text-xs text-gray-600 bg-gray-100 p-3 rounded-lg overflow-x-auto">
                 applicant_id, application_date, age, gender, education_level,
                 employment_type, marital_status, family_size,

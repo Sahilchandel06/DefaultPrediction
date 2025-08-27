@@ -38,6 +38,7 @@ function App() {
       const formData = new FormData();
       formData.append('file', file);
       const response = await fetch('https://defaultprediction-backend.onrender.com/api/credit_risk/analyze', {
+      // const response = await fetch('http://192.168.29.155:5000/api/credit_risk/analyze', {
         method: 'POST',
         body: formData
       });
@@ -98,8 +99,9 @@ function App() {
           } />
           <Route path="/history" element={
             <AnalysisHistory 
-              history={analysisHistory} 
-              onLoadAnalysis={handleLoadFromHistory}
+              history={analysisHistory}  // Fixed: use analysisHistory instead of history
+              onLoadAnalysis={handleLoadFromHistory}  // Fixed: use handleLoadFromHistory instead of onLoadAnalysis
+              showNotification={showNotification}
             />
           } />
         </Routes>
