@@ -1,80 +1,69 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 function Layout({ children }) {
-  const location = useLocation(); // This will track route changes
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const navigation = [
+    { name: 'Dashboard', href: '/', icon: 'fas fa-tachometer-alt', color: 'text-blue-600' },
+    { name: 'Upload & Analyze', href: '/upload', icon: 'fas fa-upload', color: 'text-green-600' },
+    { name: 'Analysis History', href: '/history', icon: 'fas fa-database', color: 'text-purple-600' },
+  ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div className="hidden md:flex md:flex-shrink-0">
-        <div className="flex flex-col w-64 bg-gradient-to-b from-blue-800 to-blue-900 text-white">
-          <div className="flex items-center ml-7 h-16 px-4 border-b border-blue-700">
-            <div className="flex items-left">
-              <i className="fas fa-chart-line text-2xl text-blue-300"></i>
-              <span className="text-xl font-semibold">RiskAnalyzer</span>
+      <div className={`${sidebarOpen ? 'w-64' : 'w-16'} bg-white shadow-sm border-r transition-all duration-300`}>
+        <div className="p-4">
+          <div className="flex items-center space-x-3">
+            <div className="bg-blue-600 rounded-lg p-2">
+              <i className="fas fa-shield-alt text-white text-xl"></i>
             </div>
+            {sidebarOpen && (
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">CreditRisk AI</h1>
+                <p className="text-sm text-gray-500">Risk Assessment</p>
+              </div>
+            )}
           </div>
+        </div>
 
-          <div className="flex flex-col flex-grow px-4 py-4 overflow-y-auto">
-            <nav className="flex-1 space-y-2">
+        <nav className="mt-8">
+          {navigation.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
               <Link
-                to="/"
-                className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg ${
-                  location.pathname === "/"
-                    ? "bg-blue-700 text-white"
-                    : "text-blue-200 hover:bg-blue-700 hover:text-white"
+                key={item.name}
+                to={item.href}
+                className={`flex items-center px-4 py-3 mx-2 rounded-lg transition-colors ${
+                  isActive
+                    ? 'bg-blue-50 text-blue-700 border-r-4 border-blue-600'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               >
-                <i className="fas fa-home mr-3"></i>
-                Dashboard
+                <i className={`${item.icon} ${sidebarOpen ? 'mr-3' : ''} ${isActive ? item.color : ''}`}></i>
+                {sidebarOpen && <span className="font-medium">{item.name}</span>}
               </Link>
+            );
+          })}
+        </nav>
 
-              <Link
-                to="/analyze"
-                className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg ${
-                  location.pathname === "/analyze"
-                    ? "bg-blue-700 text-white"
-                    : "text-blue-200 hover:bg-blue-700 hover:text-white"
-                }`}
-              >
-                <i className="fas fa-file-upload mr-3"></i>
-                Analyze Data
-              </Link>
-
-              <Link
-                to="/history"
-                className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg ${
-                  location.pathname === "/history"
-                    ? "bg-blue-700 text-white"
-                    : "text-blue-200 hover:bg-blue-700 hover:text-white"
-                }`}
-              >
-                <i className="fas fa-history mr-3"></i>
-                Analysis History
-              </Link>
-            </nav>
-          </div>
+        <div className="absolute bottom-4 left-4 right-4">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="w-full flex items-center justify-center py-2 text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            <i className={`fas ${sidebarOpen ? 'fa-chevron-left' : 'fa-chevron-right'}`}></i>
+          </button>
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Mobile header */}
-        <div className="md:hidden flex items-center justify-between px-4 py-3 bg-blue-800 text-white">
-          <div className="flex items-center">
-            <i className="fas fa-chart-line text-xl text-blue-300 mr-2"></i>
-            <span className="text-lg font-semibold">RiskAnalyzer</span>
-          </div>
-          <button className="p-1 rounded-md text-blue-200 hover:text-white">
-            <i className="fas fa-bars"></i>
-          </button>
-        </div>
-
-        {/* Content area */}
-        <main className="flex-1 overflow-y-auto p-4 bg-gray-50">
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="container mx-auto px-6 py-8">
           {children}
-        </main>
+        </div>
       </div>
     </div>
   );

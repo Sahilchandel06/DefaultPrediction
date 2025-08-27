@@ -1,233 +1,362 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useRef } from "react";
+import { useNavigate } from 'react-router-dom';
 
-function FileUpload({ onProcess, isLoading }) {
+function FileUpload({ onProcess, isLoading, showNotification }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragActive, setIsDragActive] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [error, setError] = useState(null);
+  const [results, setResults] = useState(null);
+  const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
-  // Supported file extensions
   const SUPPORTED_FORMATS = ['.csv', '.xlsx', '.xls', '.xlsm', '.xlsb', '.ods', '.json'];
-  
+
   const handleDrag = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") setIsDragActive(true);
-    else setIsDragActive(false);
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setIsDragActive(true);
+    } else {
+      setIsDragActive(false);
+    }
   }, []);
 
   const handleDrop = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0])
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFile(e.dataTransfer.files[0]);
+    }
   }, []);
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+    if (e.target.files && e.target.files[0]) {
+      handleFile(e.target.files[0]);
+    }
   };
 
   const handleFile = (file) => {
-    if (file.size > 5 * 1024 * 1024)
-      return alert("File size exceeds the 5MB limit.");
+    setError(null);
+    setResults(null);
     
-    // Check file extension
-    const fileName = file.name.toLowerCase();
-    const isValidFormat = SUPPORTED_FORMATS.some(format => fileName.endsWith(format));
-    
-    if (!isValidFormat) {
-      return alert(`Unsupported file format. Please upload: ${SUPPORTED_FORMATS.join(', ')}`);
+    if (file.size > 5 * 1024 * 1024) {
+      setError("File size exceeds the 5MB limit.");
+      return;
     }
-    
+
+    const fileName = file.name.toLowerCase();
+    const isValidFormat = SUPPORTED_FORMATS.some(format => 
+      fileName.endsWith(format)
+    );
+
+    if (!isValidFormat) {
+      setError(`Unsupported file format. Please upload: ${SUPPORTED_FORMATS.join(', ')}`);
+      return;
+    }
+
     setSelectedFile(file);
+  };
+
+  const removeSelectedFile = () => {
+    setSelectedFile(null);
+    setError(null);
+    setUploadProgress(0);
+    setResults(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = null;
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+
+    setUploadProgress(0);
+    setError(null);
+    setResults(null);
+
+    // Simulate upload progress
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return 90;
+        }
+        return prev + Math.random() * 30;
+      });
+    }, 200);
+
+    try {
+      const result = await onProcess(selectedFile);
+      setUploadProgress(100);
+      setResults(result);
+      
+      showNotification('✅ File processed successfully! Results displayed below.', 'success');
+      
+      // Auto-clear file after successful upload but keep results
+      setTimeout(() => {
+        setSelectedFile(null);
+        setUploadProgress(0);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = null;
+        }
+      }, 1000);
+
+    } catch (error) {
+      setError(error.message);
+      setUploadProgress(0);
+      showNotification('❌ Upload failed: ' + error.message, 'error');
+    } finally {
+      clearInterval(progressInterval);
+    }
   };
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return "0 Bytes";
-    const k = 1024,
-      sizes = ["Bytes", "KB", "MB", "GB"];
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const getFileIcon = (fileName) => {
     const name = fileName.toLowerCase();
-    if (name.endsWith('.csv')) return 'fas fa-file-csv';
-    if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.xlsm') || name.endsWith('.xlsb')) return 'fas fa-file-excel';
-    if (name.endsWith('.ods')) return 'fas fa-file-alt';
-    if (name.endsWith('.json')) return 'fas fa-file-code';
-    return 'fas fa-file';
+    if (name.endsWith('.csv')) return 'fas fa-file-csv text-green-600';
+    if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.xlsm') || name.endsWith('.xlsb')) return 'fas fa-file-excel text-emerald-600';
+    if (name.endsWith('.ods')) return 'fas fa-file-alt text-blue-600';
+    if (name.endsWith('.json')) return 'fas fa-file-code text-purple-600';
+    return 'fas fa-file text-gray-600';
   };
 
-  const getFileTypeDisplay = (fileName) => {
-    const name = fileName.toLowerCase();
-    if (name.endsWith('.csv')) return 'CSV File';
-    if (name.endsWith('.xlsx')) return 'Excel File (.xlsx)';
-    if (name.endsWith('.xls')) return 'Excel File (.xls)';
-    if (name.endsWith('.xlsm')) return 'Excel File (.xlsm)';
-    if (name.endsWith('.xlsb')) return 'Excel File (.xlsb)';
-    if (name.endsWith('.ods')) return 'OpenDocument Spreadsheet';
-    if (name.endsWith('.json')) return 'JSON File';
-    return 'Data File';
+  const getBadgeColor = (value) => {
+    const lower = value?.toLowerCase() || '';
+    if (lower === 'low' || lower === 'approve') return 'bg-green-100 text-green-800';
+    if (lower === 'medium' || lower === 'review') return 'bg-yellow-100 text-yellow-800';
+    if (lower === 'high' || lower === 'reject') return 'bg-red-100 text-red-800';
+    return 'bg-gray-100 text-gray-800';
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-          <i className="fas fa-file-upload text-blue-500"></i>
-          Upload Data File
-        </h2>
-        <a 
-          href="/templates/sample.csv" 
-          download="credit_risk_template.csv"
-          className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
-        >
-          <i className="fas fa-download mr-1"></i>
-          Download Template
-        </a>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-gray-900">Upload & Analyze</h1>
+        <p className="text-lg text-gray-600 mt-2">Upload your dataset for AI-powered credit risk assessment</p>
       </div>
 
       {/* Upload Area */}
-      <div
-        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
-          isDragActive
-            ? "bg-blue-50 border-blue-500"
-            : "border-gray-300 bg-white"
-        }`}
-        onDragEnter={handleDrag}
-        onDragOver={handleDrag}
-        onDragLeave={handleDrag}
-        onDrop={handleDrop}
-      >
-        <div className="text-5xl text-blue-400 mb-4">
-          <i className="fas fa-cloud-upload-alt"></i>
-        </div>
-        <p className="text-gray-600 text-base font-medium mb-2">
-          Drag & Drop your data file here
-        </p>
-        <p className="text-gray-500 mb-2 text-sm">
-          Supports CSV, Excel (.xlsx, .xls, .xlsm, .xlsb), ODS, JSON
-        </p>
-        <p className="text-gray-500 mb-4">or</p>
-        <label
-          htmlFor="fileInput"
-          className="inline-flex items-center px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg shadow hover:bg-blue-700 cursor-pointer transition"
+      <div className="bg-white rounded-lg shadow-sm border p-8">
+        <div
+          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+            isDragActive
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-300 hover:border-gray-400'
+          }`}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
         >
-          <i className="fas fa-folder-open mr-2"></i>
-          Browse Files
-          <input
-            type="file"
-            id="fileInput"
-            className="hidden"
-            accept=".csv,.xlsx,.xls,.xlsm,.xlsb,.ods,.json"
-            onChange={handleFileChange}
-          />
-        </label>
+          {isLoading ? (
+            <div className="space-y-4">
+              <i className="fas fa-spinner animate-spin text-4xl text-blue-500"></i>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Processing your file...</h3>
+                <p className="text-gray-600">AI models are analyzing credit risk patterns...</p>
+              </div>
+            </div>
+          ) : selectedFile ? (
+            <div className="space-y-4">
+              <i className={getFileIcon(selectedFile.name) + ' text-4xl'}></i>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">{selectedFile.name}</h3>
+                <p className="text-gray-600">Size: {formatFileSize(selectedFile.size)}</p>
+                {uploadProgress === 100 ? (
+                  <p className="text-green-600 font-medium">✓ File ready for analysis</p>
+                ) : uploadProgress > 0 ? (
+                  <div className="mt-2">
+                    <div className="bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all"
+                        style={{ width: `${uploadProgress}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">{Math.round(uploadProgress)}% processed</p>
+                  </div>
+                ) : null}
+              </div>
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={handleUpload}
+                  disabled={isLoading || uploadProgress > 0}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {uploadProgress > 0 ? 'Processing...' : 'Analyze File'}
+                </button>
+                <button
+                  onClick={removeSelectedFile}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <i className="fas fa-cloud-upload-alt text-4xl text-gray-400"></i>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Drag & Drop your data file here</h3>
+                <p className="text-gray-600">Supports CSV, Excel (.xlsx, .xls, .xlsm, .xlsb), ODS, JSON files</p>
+              </div>
+              <div>
+                <p className="text-gray-500 mb-4">or</p>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Browse Files
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={SUPPORTED_FORMATS.join(',')}
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
+        {error && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm">{error}</p>
+          </div>
+        )}
+
+        {/* Supported Formats */}
+        <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm">
+          <div className="p-3 bg-green-50 rounded-lg">
+            <i className="fas fa-file-csv text-green-600 text-2xl mb-2"></i>
+            <p className="text-green-700 font-medium">CSV</p>
+          </div>
+          <div className="p-3 bg-emerald-50 rounded-lg">
+            <i className="fas fa-file-excel text-emerald-600 text-2xl mb-2"></i>
+            <p className="text-emerald-700 font-medium">Excel</p>
+          </div>
+          <div className="p-3 bg-blue-50 rounded-lg">
+            <i className="fas fa-file-alt text-blue-600 text-2xl mb-2"></i>
+            <p className="text-blue-700 font-medium">ODS</p>
+          </div>
+          <div className="p-3 bg-purple-50 rounded-lg">
+            <i className="fas fa-file-code text-purple-600 text-2xl mb-2"></i>
+            <p className="text-purple-700 font-medium">JSON</p>
+          </div>
+        </div>
       </div>
 
-      {/* Selected File Info */}
-      {selectedFile && (
-        <div className="bg-green-50 border border-green-200 rounded-xl px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-green-700 font-semibold text-lg mb-1 flex items-center">
-                <i className={`${getFileIcon(selectedFile.name)} mr-2`}></i> 
-                Selected File
-              </h3>
-              <p className="text-sm text-gray-700">
-                <strong>Filename:</strong> {selectedFile.name}
-              </p>
-              <p className="text-sm text-gray-700">
-                <strong>Type:</strong> {getFileTypeDisplay(selectedFile.name)}
-              </p>
-              <p className="text-sm text-gray-700">
-                <strong>Size:</strong> {formatFileSize(selectedFile.size)}
-              </p>
+      {/* Features */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
+          <i className="fas fa-brain text-3xl text-blue-600 mb-4"></i>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">AI-Powered Analysis</h3>
+          <p className="text-gray-600 text-sm">Advanced ML models assess credit risk with high accuracy</p>
+        </div>
+        <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
+          <i className="fas fa-database text-3xl text-green-600 mb-4"></i>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Database Storage</h3>
+          <p className="text-gray-600 text-sm">All results permanently stored for future reference</p>
+        </div>
+        <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
+          <i className="fas fa-chart-bar text-3xl text-purple-600 mb-4"></i>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Instant Reports</h3>
+          <p className="text-gray-600 text-sm">Get comprehensive risk assessment reports instantly</p>
+        </div>
+      </div>
+
+      {/* Results Display */}
+      {results && (
+        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b">
+            <h2 className="text-xl font-bold text-gray-900">Analysis Results</h2>
+            <p className="text-gray-600">Processing completed successfully - {results.analysis_metadata?.total_applicants} applicants analyzed</p>
+          </div>
+
+          {/* Summary Stats */}
+          <div className="p-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <p className="text-2xl font-bold text-blue-600">{results.analysis_metadata?.total_applicants}</p>
+                <p className="text-sm text-gray-600">Total Applicants</p>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <p className="text-2xl font-bold text-green-600">{results.portfolio_overview?.approval_summary?.Approve || 0}</p>
+                <p className="text-sm text-gray-600">Approved</p>
+              </div>
+              <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                <p className="text-2xl font-bold text-yellow-600">{results.portfolio_overview?.approval_summary?.Review || 0}</p>
+                <p className="text-sm text-gray-600">Under Review</p>
+              </div>
+              <div className="text-center p-4 bg-red-50 rounded-lg">
+                <p className="text-2xl font-bold text-red-600">{results.portfolio_overview?.approval_summary?.Reject || 0}</p>
+                <p className="text-sm text-gray-600">Rejected</p>
+              </div>
             </div>
-            <button 
-              onClick={() => setSelectedFile(null)}
-              className="text-red-500 hover:text-red-700"
-            >
-              <i className="fas fa-times"></i>
-            </button>
+
+            {/* Applicants Grid */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">Individual Applicants</h3>
+              <div className="grid gap-4">
+                {results.individual_applicants?.slice(0, 10).map((applicant, index) => (
+                  <div key={applicant.applicant_id || index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-4">
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{applicant.applicant_id}</h4>
+                            <p className="text-sm text-gray-600">
+                              Age: {applicant.demographics?.age} • Income: ₹{applicant.demographics?.monthly_income?.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getBadgeColor(applicant.risk_assessment?.overall_risk)}`}>
+                          {applicant.risk_assessment?.overall_risk}
+                        </span>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getBadgeColor(applicant.risk_assessment?.recommendation)}`}>
+                          {applicant.risk_assessment?.recommendation}
+                        </span>
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-red-600">
+                            {(applicant.risk_assessment?.default_probability * 100).toFixed(1)}% Risk
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Max Loan: ₹{applicant.loan_details?.loan_range?.maximum?.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {results.individual_applicants?.length > 10 && (
+                <div className="text-center pt-4">
+                  <button
+                    onClick={() => navigate('/history')}
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    View All {results.individual_applicants.length} Applicants in History
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
-
-      {/* Action Button */}
-      <div className="flex justify-end">
-        <button
-          type="button"
-          className={`px-6 py-3 font-semibold text-white rounded-lg shadow transition flex items-center ${
-            !selectedFile || isLoading
-              ? "bg-blue-300 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
-          }`}
-          onClick={() => onProcess(selectedFile)}
-          disabled={!selectedFile || isLoading}
-        >
-          {isLoading ? (
-            <>
-              <i className="fas fa-spinner fa-spin mr-2"></i>
-              Processing...
-            </>
-          ) : (
-            <>
-              <i className="fas fa-play mr-2"></i>
-              Analyze Credit Risk
-            </>
-          )}
-        </button>
-      </div>
-
-      {/* Requirements */}
-      <div className="bg-gray-50 border border-gray-200 p-6 rounded-xl">
-        <h3 className="text-gray-800 font-semibold mb-3 flex items-center">
-          <i className="fas fa-info-circle mr-2 text-gray-500"></i>
-          File Requirements
-        </h3>
-        <ul className="list-disc pl-5 text-sm space-y-2 text-gray-700">
-          <li>
-            <strong>Supported formats:</strong> 
-            <div className="mt-1 flex flex-wrap gap-2">
-              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">CSV</span>
-              <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Excel (.xlsx, .xls, .xlsm, .xlsb)</span>
-              <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs">OpenDocument (.ods)</span>
-              <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">JSON</span>
-            </div>
-          </li>
-          <li>File should not exceed <strong>5MB</strong> in size</li>
-          <li>For Excel files: Data should be in the first sheet</li>
-          <li>For CSV files: UTF-8 encoding recommended</li>
-          <li>First row should contain column headers</li>
-          <li>Ensure all required fields have valid numerical values</li>
-          <li className="w-full">
-            Required columns:
-            <div className="w-full mt-2">
-              <div className="font-mono text-xs text-gray-600 bg-gray-100 p-3 rounded-lg overflow-x-auto">
-                applicant_id, application_date, age, gender, education_level,
-                employment_type, marital_status, family_size,
-                number_of_dependents, location_type, monthly_income_inr,
-                spouse_income_inr, monthly_expenses_inr, monthly_savings_inr,
-                monthly_utility_bills_inr, property_value_inr,
-                vehicle_value_inr, total_investments_inr,
-                outstanding_loan_amount_inr, years_current_employment,
-                banking_relationship_years, monthly_business_revenue_inr,
-                daily_mobile_hours, monthly_digital_transactions,
-                avg_transaction_amount_inr, social_media_accounts_count,
-                mobile_app_usage_intensity_score,
-                digital_payment_adoption_score,
-                utility_payment_regularity_score, location_stability_score,
-                mobile_banking_usage_score, payment_reliability_score,
-                financial_health_score, stability_index, timeliness_score,
-                repayment_ability_score, probability_of_default,
-                data_completeness_pct, consent_status,
-                explainability_support_flag
-              </div>
-            </div>
-          </li>
-        </ul>
-      </div>
     </div>
   );
 }

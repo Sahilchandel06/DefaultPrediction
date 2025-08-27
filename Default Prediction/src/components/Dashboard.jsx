@@ -1,139 +1,146 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import CountUp from 'react-countup';
 
-function Dashboard({ history, onLoadAnalysis }) {
-  const totalAnalyses = history.length;
+function Dashboard({ history, stats, onLoadAnalysis, showNotification }) {
+  const [animatedStats, setAnimatedStats] = useState({});
   const lastAnalysis = history[0];
 
-  const getPortfolioStats = (analysis) => {
-    if (!analysis || !analysis.data || !analysis.data.portfolio_overview) return null;
-    return analysis.data.portfolio_overview.approval_summary;
-  };
+  useEffect(() => {
+    if (stats) {
+      setAnimatedStats(stats);
+    }
+  }, [stats]);
 
-  const portfolioStats = getPortfolioStats(lastAnalysis);
+  const StatCard = ({ title, value, icon, color, suffix = '', description, trend }) => (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-600">{title}</p>
+          <p className="text-2xl font-bold text-gray-900">
+            <CountUp end={value} duration={1.5} suffix={suffix} />
+          </p>
+          <p className="text-sm text-gray-500 mt-1">{description}</p>
+          {trend && (
+            <span className={`text-xs font-medium ${trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <i className={`fas ${trend > 0 ? 'fa-arrow-up' : 'fa-arrow-down'} mr-1`}></i>
+              {Math.abs(trend)}%
+            </span>
+          )}
+        </div>
+        <div className={`p-3 rounded-lg ${color}`}>
+          <i className={`${icon} text-xl text-white`}></i>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-        <div className="text-sm text-gray-500">
-          {lastAnalysis
-            ? `Last analyzed: ${new Date(lastAnalysis.timestamp).toLocaleString()}`
-            : 'No analyses yet'}
-        </div>
+      {/* Header */}
+      <div className="text-center py-8">
+        <h1 className="text-3xl font-bold text-gray-900">AI-Powered Credit Risk Assessment Platform</h1>
+        <p className="text-lg text-gray-600 mt-2">Real-time risk analysis with database persistence</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Total Analyses</p>
-              <p className="text-3xl font-bold text-gray-800 mt-1">{totalAnalyses}</p>
-            </div>
-            <div className="p-3 rounded-lg bg-blue-100 text-blue-600">
-              <i className="fas fa-chart-pie text-xl"></i>
-            </div>
-          </div>
-        </div>
-
-        {portfolioStats ? (
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Approved Loans</p>
-                <p className="text-3xl font-bold text-gray-800 mt-1">{portfolioStats.Approve || 0}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-green-100 text-green-600">
-                <i className="fas fa-check-circle text-xl"></i>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl shadow p-6 flex items-center justify-center">
-            <p className="text-gray-500">No analysis data available</p>
-          </div>
-        )}
-      </div>
-
-      {/* Quick Actions */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Link to="/analyze" className="bg-white rounded-xl shadow p-6 hover:shadow-md transition cursor-pointer">
-          <div className="flex flex-col items-center text-center">
-            <div className="p-4 rounded-full bg-blue-100 text-blue-600 mb-3">
-              <i className="fas fa-file-upload text-2xl"></i>
-            </div>
-            <h3 className="font-medium text-gray-800">New Analysis</h3>
-            <p className="text-sm text-gray-500 mt-1">Upload data for risk assessment</p>
-          </div>
-        </Link>
-
-        <Link to="/history" className="bg-white rounded-xl shadow p-6 hover:shadow-md transition cursor-pointer">
-          <div className="flex flex-col items-center text-center">
-            <div className="p-4 rounded-full bg-green-100 text-green-600 mb-3">
-              <i className="fas fa-history text-2xl"></i>
-            </div>
-            <h3 className="font-medium text-gray-800">History</h3>
-            <p className="text-sm text-gray-500 mt-1">View past analyses</p>
-          </div>
-        </Link>
-
-        <a
-          href="/templates/sample.csv"
-          download="credit_risk_template.csv"
-          className="bg-white rounded-xl shadow p-6 hover:shadow-md transition cursor-pointer"
-        >
-          <div className="flex flex-col items-center text-center">
-            <div className="p-4 rounded-full bg-purple-100 text-purple-600 mb-3">
-              <i className="fas fa-file-alt text-2xl"></i>
-            </div>
-            <h3 className="font-medium text-gray-800">Template</h3>
-            <p className="text-sm text-gray-500 mt-1">Download data template</p>
-          </div>
-        </a>
+        <StatCard
+          title="Total Analyses"
+          value={animatedStats?.total_analyses || 0}
+          icon="fas fa-chart-line"
+          color="bg-blue-500"
+          description="Completed analyses"
+        />
+        <StatCard
+          title="Total Applicants"
+          value={animatedStats?.total_applicants || 0}
+          icon="fas fa-users"
+          color="bg-green-500"
+          description="Processed applicants"
+        />
+        <StatCard
+          title="Approved"
+          value={animatedStats?.total_approved || 0}
+          icon="fas fa-check-circle"
+          color="bg-purple-500"
+          description="Loan approvals"
+        />
       </div>
 
-      {/* Recent Analyses */}
-      {history.length > 0 && (
-        <div className="bg-white rounded-xl shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800">Recent Analyses</h2>
+      {/* Recent Analysis Card */}
+      {lastAnalysis ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Recent Analysis</h3>
+            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+              Database ID: {lastAnalysis.id}
+            </span>
           </div>
-          <div className="divide-y divide-gray-200">
-            {history.slice(0, 5).map((analysis) => (
-              <div
-                key={analysis.id}
-                className="px-6 py-4 hover:bg-gray-50 transition cursor-pointer"
-                onClick={() => onLoadAnalysis(analysis)}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-gray-800">{analysis.filename}</p>
-                    <p className="text-sm text-gray-500">
-                      {new Date(analysis.timestamp).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                      {analysis.status || 'Completed'}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      {analysis.data?.individual_applicants?.length || 0} applicants
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          {history.length > 5 && (
-            <div className="px-6 py-3 border-t border-gray-200 text-center">
-              <Link to="/history" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                View All Analyses
-              </Link>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <p className="text-sm text-gray-500">Analysis Date</p>
+              <p className="font-medium">{new Date(lastAnalysis.timestamp).toLocaleString()}</p>
             </div>
-          )}
+            <div>
+              <p className="text-sm text-gray-500">File Name</p>
+              <p className="font-medium">{lastAnalysis.filename}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Applicants Processed</p>
+              <p className="font-medium">{lastAnalysis.data?.analysis_metadata?.total_applicants || 0}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => onLoadAnalysis(lastAnalysis)}
+            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <i className="fas fa-eye mr-2"></i>
+            View Analysis
+          </button>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+          <i className="fas fa-upload text-4xl text-gray-400 mb-4"></i>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Upload your first dataset to get started</h3>
+          <Link
+            to="/upload"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <i className="fas fa-plus mr-2"></i>
+            Upload Data Now
+          </Link>
         </div>
       )}
+
+      {/* Action Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Link
+          to="/upload"
+          className="block bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-sm p-6 text-white hover:from-blue-600 hover:to-blue-700 transition-all"
+        >
+          <div className="flex items-center">
+            <i className="fas fa-upload text-2xl mr-4"></i>
+            <div>
+              <h3 className="text-lg font-semibold">Upload & analyze data</h3>
+              <p className="text-blue-100">Process CSV files with AI models</p>
+            </div>
+          </div>
+        </Link>
+
+        <Link
+          to="/history"
+          className="block bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl shadow-sm p-6 text-white hover:from-purple-600 hover:to-purple-700 transition-all"
+        >
+          <div className="flex items-center">
+            <i className="fas fa-database text-2xl mr-4"></i>
+            <div>
+              <h3 className="text-lg font-semibold">Browse past analyses</h3>
+              <p className="text-purple-100">View stored analysis results</p>
+            </div>
+          </div>
+        </Link>
+      </div>
     </div>
   );
 }

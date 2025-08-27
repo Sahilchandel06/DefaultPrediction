@@ -3,117 +3,148 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import FileUpload from './components/FileUpload';
-import ResultsDisplay from './components/ResultsDisplay';
-import Notification from './components/Notification';
 import AnalysisHistory from './components/AnalysisHistory';
-import './App.css';
+import Notification from './components/Notification';
+import LoadingOverlay from './components/LoadingOverlay';
+import ErrorBoundary from './components/ErrorBoundary';
+import { api } from './utils/api';
 
 function App() {
-  const [analysisData, setAnalysisData] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [stats, setStats] = useState({});
   const [notification, setNotification] = useState(null);
-  const [analysisHistory, setAnalysisHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [currentAnalysis, setCurrentAnalysis] = useState(null);
 
   useEffect(() => {
-    const savedHistory = localStorage.getItem('analysisHistory');
-    if (savedHistory) {
-      setAnalysisHistory(JSON.parse(savedHistory));
-    }
+    loadData();
   }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [historyResponse, statsResponse] = await Promise.all([
+        api.getHistory(),
+        api.getDashboardStats()
+      ]);
+
+      if (historyResponse.status === 'success') {
+        setHistory(historyResponse.analyses);
+      }
+
+      if (statsResponse.status === 'success') {
+        setStats(statsResponse.stats);
+      }
+    } catch (error) {
+      console.error('Failed to load data:', error);
+      showNotification('Failed to load data from database', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const showNotification = (message, type = 'info') => {
     setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
+    setTimeout(() => setNotification(null), 5000);
   };
 
   const handleFileProcess = async (file) => {
-    if (!file) {
-      showNotification("Please upload a valid file.", "error");
-      return;
-    }
-
-    setIsLoading(true);
-
+    setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const response = await fetch('https://defaultprediction-backend.onrender.com/api/credit_risk/analyze', {
-      // const response = await fetch('http://192.168.29.155:5000/api/credit_risk/analyze', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await response.json();
-
-      const newAnalysis = {
-        id: `ANL-${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        data: data.results,
-        filename: file.name,
-        status: 'completed'
-      };
-
-      const updatedHistory = [newAnalysis, ...analysisHistory];
-      setAnalysisHistory(updatedHistory);
-      localStorage.setItem('analysisHistory', JSON.stringify(updatedHistory));
-
-      setAnalysisData(data);
-      showNotification('Analysis completed successfully!', 'success');
+      const response = await api.analyzeFile(file);
+      if (response.status === 'success') {
+        showNotification('✅ File processed and saved to database successfully!', 'success');
+        setCurrentAnalysis(response.results);
+        
+        // Reload data to update dashboard and history
+        await loadData();
+        
+        return response.results;
+      } else {
+        throw new Error(response.error || 'Processing failed');
+      }
     } catch (error) {
-      showNotification('Processing failed. Please try again.', 'error');
-      console.error('Error:', error);
+      console.error('Processing error:', error);
+      showNotification(`❌ Processing failed: ${error.message}`, 'error');
+      throw error;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleLoadFromHistory = (analysis) => {
-    setAnalysisData({ results: analysis.data });
-    showNotification('Analysis loaded from history', 'success');
+  const handleDeleteAnalysis = async (analysisId) => {
+    try {
+      const response = await api.deleteAnalysis(analysisId);
+      if (response.status === 'success') {
+        await loadData(); // Reload data after deletion
+        return true;
+      } else {
+        throw new Error(response.error || 'Delete failed');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      throw error;
+    }
+  };
+
+  const handleLoadAnalysis = (analysis) => {
+    setCurrentAnalysis(analysis.data);
+    showNotification(`📊 Loaded analysis: ${analysis.filename}`, 'success');
   };
 
   return (
-    <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={
-            <Dashboard 
-              history={analysisHistory} 
-              onLoadAnalysis={handleLoadFromHistory} 
-            />
-          } />
-          <Route path="/analyze" element={
-            <div className="max-w-5xl mx-auto">
-              <div className="bg-white rounded-xl shadow p-6 mb-8">
-                <FileUpload onProcess={handleFileProcess} isLoading={isLoading} />
-              </div>
-              {analysisData && (
-                <div className="bg-white rounded-xl shadow p-6 mb-8">
-                  <ResultsDisplay 
-                    data={analysisData.results} 
-                    filename={analysisData.filename}
+    <ErrorBoundary>
+      <Router>
+        <div className="App">
+          {loading && <LoadingOverlay />}
+          
+          <Layout>
+            <Routes>
+              <Route 
+                path="/" 
+                element={
+                  <Dashboard 
+                    history={history}
+                    stats={stats}
+                    onLoadAnalysis={handleLoadAnalysis}
                     showNotification={showNotification}
                   />
-                </div>
-              )}
-            </div>
-          } />
-          <Route path="/history" element={
-            <AnalysisHistory 
-              history={analysisHistory}  // Fixed: use analysisHistory instead of history
-              onLoadAnalysis={handleLoadFromHistory}  // Fixed: use handleLoadFromHistory instead of onLoadAnalysis
-              showNotification={showNotification}
-            />
-          } />
-        </Routes>
+                } 
+              />
+              
+              <Route 
+                path="/upload" 
+                element={
+                  <FileUpload 
+                    onProcess={handleFileProcess}
+                    isLoading={loading}
+                    showNotification={showNotification}
+                  />
+                } 
+              />
+              
+              <Route 
+                path="/history" 
+                element={
+                  <AnalysisHistory
+                    history={history}
+                    onDeleteAnalysis={handleDeleteAnalysis}
+                    showNotification={showNotification}
+                  />
+                } 
+              />
+            </Routes>
+          </Layout>
 
-        {notification && (
-          <Notification 
-            message={notification.message} 
-            type={notification.type} 
-          />
-        )}
-      </Layout>
-    </Router>
+          {notification && (
+            <Notification 
+              message={notification.message} 
+              type={notification.type} 
+            />
+          )}
+        </div>
+      </Router>
+    </ErrorBoundary>
   );
 }
 
