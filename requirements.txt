@@ -3,3 +3,6 @@ flask-cors
 pandas
 scikit-learn
 joblib
+odfpy 
+openpyxl 
+xlrd
